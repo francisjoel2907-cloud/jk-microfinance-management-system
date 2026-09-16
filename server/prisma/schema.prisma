@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  ACCOUNTANT
+  CASHIER
+}
+
+enum LoanStatus {
+  PENDING
+  APPROVED
+  ACTIVE
+  COMPLETED
+  OVERDUE
+  REJECTED
+}
+
+enum InstallmentStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum PaymentMethod {
+  CASH
+  MOBILE_MONEY
+  BANK_TRANSFER
+}
+
+model User {
+  id          String      @id @default(uuid())
+
+  firstName   String
+
+  lastName    String
+
+  email       String      @unique
+
+  phone       String      @unique
+
+  password    String
+
+  role        UserRole    @default(CASHIER)
+
+  isActive    Boolean     @default(true)
+
+  loans       Loan[]
+
+  processedPayments Payment[] @relation("ProcessedPayments")
+
+  auditLogs AuditLog[]
+
+  createdAt   DateTime    @default(now())
+
+  updatedAt   DateTime    @updatedAt
+}
+
+model Customer {
+  id           String      @id @default(uuid())
+
+  firstName    String
+
+  lastName     String
+
+  email        String      @unique
+
+  phone        String      @unique
+
+  address      String
+
+  nationalId   String      @unique
+
+  isActive     Boolean     @default(true)
+
+  loans        Loan[]
+
+  createdAt    DateTime    @default(now())
+
+  updatedAt    DateTime    @updatedAt
+}
+
+model Loan {
+  id                String        @id @default(uuid())
+
+  customerId        String
+
+  loanOfficerId     String
+
+  principalAmount   Float
+
+  interestRate      Float
+
+  totalAmount       Float
+
+  paidAmount        Float         @default(0)
+
+  remainingAmount   Float
+
+  durationMonths    Int
+
+  issuedDate        DateTime
+
+  dueDate           DateTime
+
+  status            LoanStatus    @default(PENDING)
+
+  customer          Customer      @relation(fields: [customerId], references: [id])
+
+  loanOfficer       User          @relation(fields: [loanOfficerId], references: [id])
+
+  payments          Payment[]
+
+  installments      Installment[]
+
+  createdAt         DateTime      @default(now())
+
+  updatedAt         DateTime      @updatedAt
+}
+
+model Payment {
+  id               String @id @default(uuid())
+
+  loanId           String
+
+  processedById    String
+
+  amount           Float
+
+  paymentMethod    PaymentMethod
+
+  paymentDate      DateTime
+
+ referenceNumber  String? @unique
+
+  notes            String?
+
+  loan             Loan @relation(fields: [loanId], references: [id])
+
+  processedBy      User @relation("ProcessedPayments", fields: [processedById], references: [id])
+
+  createdAt        DateTime @default(now())
+
+  updatedAt        DateTime @updatedAt
+}
+
+model Installment {
+  id                 String                @id @default(uuid())
+
+  loanId             String
+
+  installmentNumber  Int
+
+  amount             Float
+
+  paidAmount         Float                 @default(0)
+
+  penaltyAmount Float @default(0)
+
+  dueDate            DateTime
+
+  paidDate           DateTime?
+
+  status             InstallmentStatus     @default(PENDING)
+
+  loan               Loan                  @relation(fields: [loanId], references: [id])
+
+  createdAt          DateTime              @default(now())
+
+  updatedAt          DateTime              @updatedAt
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+
+  userId      String
+
+  action      String
+
+  entity      String
+
+  entityId    String
+
+  description String
+
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}

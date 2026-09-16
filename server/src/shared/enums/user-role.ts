@@ -1,0 +1,8 @@
+const USER_ROLE = {
+  SUPER_ADMIN: "SUPER_ADMIN",
+  ADMIN: "ADMIN",
+  ACCOUNTANT: "ACCOUNTANT",
+  CASHIER: "CASHIER",
+} as const;
+
+export default USER_ROLE;
